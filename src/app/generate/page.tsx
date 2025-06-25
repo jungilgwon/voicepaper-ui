@@ -2,57 +2,54 @@
 
 import { useState } from 'react'
 
-const categories = [
-  { name: "자연어처리", code: "cs.CL" },
-  { name: "컴퓨터비전", code: "cs.CV" },
-  { name: "기계학습", code: "cs.LG" },
-  { name: "로보틱스", code: "cs.RO" },
-  { name: "인공지능", code: "cs.AI" },
-]
-
 export default function GeneratePage() {
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState<any[]>([])
 
-  const handleCategoryClick = (code: string) => {
-    setSelectedCategory(code)
-    console.log('선택된 주제:', code)
-    // TODO: fetch(`/api/arxiv/list?cat=${code}`)
+  const handleSearch = async () => {
+    const encoded = encodeURIComponent(`all:${query}`)
+    const url = `https://export.arxiv.org/api/query?search_query=${encoded}&start=0&max_results=5`
+    const res = await fetch(url)
+    const text = await res.text()
+
+    // 간단한 파싱 (정식 XML 파싱은 나중에)
+    const entries = [...text.matchAll(/<entry>([\s\S]*?)<\/entry>/g)].map(entry => {
+      const title = entry[1].match(/<title>([\s\S]*?)<\/title>/)?.[1].trim()
+      const id = entry[1].match(/<id>(.*?)<\/id>/)?.[1].trim()
+      return { title, id }
+    })
+
+    setResults(entries)
   }
 
   return (
     <main className="p-6">
-      <h1 className="text-2xl font-bold mb-4">🎙️ 논문 팟캐스트 생성</h1>
+      <h1 className="text-2xl font-bold mb-4">🔍 논문 검색 및 팟캐스트 생성</h1>
 
-      <div className="mb-6">
-        <p className="font-semibold mb-2">주제를 선택하세요:</p>
-        <div className="flex flex-wrap gap-2">
-          {categories.map((cat) => (
-            <button
-              key={cat.code}
-              onClick={() => handleCategoryClick(cat.code)}
-              className={`px-3 py-1 rounded border 
-                ${selectedCategory === cat.code ? 'bg-black text-white' : 'bg-white text-black'}`}
-            >
-              {cat.name}
-            </button>
-          ))}
-        </div>
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="예: DNA, BERT, GAN..."
+          className="border rounded p-2 mr-2"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        <button
+          onClick={handleSearch}
+          className="bg-black text-white px-4 py-2 rounded"
+        >
+          검색
+        </button>
       </div>
 
-      <form className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">논문 URL</label>
-          <input
-            type="url"
-            placeholder="https://arxiv.org/abs/..."
-            className="w-full border rounded p-2"
-            required
-          />
-        </div>
-        <button type="submit" className="bg-black text-white px-4 py-2 rounded">
-          요약 및 음성 생성
-        </button>
-      </form>
+      <ul className="space-y-2">
+        {results.map((item, i) => (
+          <li key={i} className="border rounded p-2">
+            <p className="font-semibold">{item.title}</p>
+            <a href={item.id} target="_blank" className="text-blue-500 text-sm">{item.id}</a>
+          </li>
+        ))}
+      </ul>
     </main>
   )
 }
