@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 
+type Paper = { id: string; title: string };
+
 export default function GeneratePage() {
   const [keyword, setKeyword] = useState("");
-  const [papers, setPapers] = useState([]);
+  const [papers, setPapers] = useState<Paper[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [summary, setSummary] = useState("");
 
