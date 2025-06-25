@@ -1,9 +1,19 @@
-import { NextResponse } from "next/server"; // 예시 구조 - 실제로는 클라우드 TTS API 연동 필요
+import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
-  const { text } = await req.json();
-  // TODO: TTS 처리 → 오디오 생성
-  return NextResponse.json({
-    audioUrl: `/mock-tts/${encodeURIComponent(text)}.mp3`
+  const { text, style, speed } = await req.json();
+
+  const speechUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(
+    text
+  )}&tl=ko&client=tw-ob`;
+
+  const response = await fetch(speechUrl);
+  const audio = await response.arrayBuffer();
+
+  return new NextResponse(audio, {
+    headers: {
+      "Content-Type": "audio/mpeg",
+      "Content-Length": audio.byteLength.toString(),
+    },
   });
 }
