@@ -1,11 +1,14 @@
+// src/app/api/search/route.ts
+import { NextResponse } from "next/server";
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const keyword = searchParams.get("keyword");
 
-  return Response.json({
+  return NextResponse.json({
     papers: [
-      { id: "1", title: `${keyword} 관련 논문 1` },
-      { id: "2", title: `${keyword} 관련 논문 2` },
+      { id: "paper1", title: `${keyword} 논문 1` },
+      { id: "paper2", title: `${keyword} 논문 2` },
     ],
   });
 }
