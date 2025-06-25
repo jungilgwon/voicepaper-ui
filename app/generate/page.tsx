@@ -2,27 +2,16 @@
 
 import { useState } from "react";
 
-type Paper = {
-  id: string;
-  title: string;
-};
-
 export default function GeneratePage() {
   const [keyword, setKeyword] = useState("");
-  const [papers, setPapers] = useState<Paper[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [papers, setPapers] = useState<{ id: string; title: string }[]>([]);
   const [summary, setSummary] = useState("");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const handleSearch = async () => {
     const res = await fetch(`/api/search?keyword=${encodeURIComponent(keyword)}`);
     const data = await res.json();
-
-    // 최대 20개까지 제한
-    const limitedPapers = data.papers.slice(0, 20);
-
-    setPapers(limitedPapers);
-    setSelectedId(null);
-    setSummary("");
+    setPapers(data.slice(0, 20)); // 최대 20개 제한
   };
 
   const handleSelect = async (id: string) => {
@@ -33,32 +22,31 @@ export default function GeneratePage() {
   };
 
   return (
-    <main className="p-6">
+    <div className="p-4 bg-black min-h-screen text-white">
       <h1 className="text-2xl font-bold mb-4">🔍 논문 검색 및 요약</h1>
 
-      <div className="mb-4">
+      <div className="flex gap-2 mb-4">
         <input
-          type="text"
+          className="border p-2 rounded text-black w-full"
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
-          placeholder="검색어를 입력하세요 (예: DNA)"
-          className="border rounded px-3 py-2 mr-2 w-80"
+          placeholder="검색어를 입력하세요"
         />
         <button
           onClick={handleSearch}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
         >
           검색
         </button>
       </div>
 
-      <ul className="space-y-2 mb-6">
+      <ul className="space-y-2">
         {papers.map((paper) => (
           <li
             key={paper.id}
-            className={`cursor-pointer border p-2 rounded hover:bg-gray-100 ${
-              selectedId === paper.id ? "bg-gray-100" : ""
-            }`}
+            className={`cursor-pointer border p-2 rounded transition 
+              ${selectedId === paper.id ? "bg-gray-600" : "bg-gray-900"} 
+              hover:bg-gray-700`}
             onClick={() => handleSelect(paper.id)}
           >
             {paper.title}
@@ -67,11 +55,11 @@ export default function GeneratePage() {
       </ul>
 
       {summary && (
-        <div className="border p-4 rounded bg-gray-50">
-          <h2 className="font-semibold mb-2">요약:</h2>
+        <div className="bg-gray-800 text-white p-4 rounded mt-6">
+          <p className="font-semibold mb-2">📝 요약:</p>
           <p>{summary}</p>
         </div>
       )}
-    </main>
+    </div>
   );
 }
