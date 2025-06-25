@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 
-type Paper = { id: string; title: string };
+type Paper = {
+  id: string;
+  title: string;
+};
 
 export default function GeneratePage() {
   const [keyword, setKeyword] = useState("");
@@ -13,22 +16,26 @@ export default function GeneratePage() {
   const handleSearch = async () => {
     const res = await fetch(`/api/search?keyword=${encodeURIComponent(keyword)}`);
     const data = await res.json();
-    setPapers(data.papers);
+
+    // 최대 20개까지 제한
+    const limitedPapers = data.papers.slice(0, 20);
+
+    setPapers(limitedPapers);
     setSelectedId(null);
     setSummary("");
   };
 
   const handleSelect = async (id: string) => {
-  setSelectedId(id);
-  const res = await fetch(`/api/summary?id=${id}`);
-  const data = await res.json();
-  setSummary(data.summary);
+    setSelectedId(id);
+    const res = await fetch(`/api/summary?id=${id}`);
+    const data = await res.json();
+    setSummary(data.summary);
   };
-
 
   return (
     <main className="p-6">
       <h1 className="text-2xl font-bold mb-4">🔍 논문 검색 및 요약</h1>
+
       <div className="mb-4">
         <input
           type="text"
@@ -44,17 +51,21 @@ export default function GeneratePage() {
           검색
         </button>
       </div>
+
       <ul className="space-y-2 mb-6">
         {papers.map((paper) => (
           <li
             key={paper.id}
-            className={`cursor-pointer border p-2 rounded hover:bg-gray-100 ${selectedId === paper.id ? "bg-gray-100" : ""}`}
+            className={`cursor-pointer border p-2 rounded hover:bg-gray-100 ${
+              selectedId === paper.id ? "bg-gray-100" : ""
+            }`}
             onClick={() => handleSelect(paper.id)}
           >
             {paper.title}
           </li>
         ))}
       </ul>
+
       {summary && (
         <div className="border p-4 rounded bg-gray-50">
           <h2 className="font-semibold mb-2">요약:</h2>

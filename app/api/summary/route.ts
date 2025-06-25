@@ -1,15 +1,18 @@
-export const dynamic = "force-dynamic";
-
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const id = searchParams.get('id') || '';
+  const id = searchParams.get("id") || "";
 
-  const summaries: Record<string, string> = {
-    paper1: "이 논문은 DNA의 이중 나선 구조를 다룹니다.",
-    paper2: "이 논문은 DNA와 RNA의 차이점을 분석합니다.",
-  };
+  // 20개의 더미 요약 데이터를 생성
+  const summaries: Record<string, string> = Object.fromEntries(
+    Array.from({ length: 20 }, (_, i) => [
+      `paper${i + 1}`,
+      `이 논문은 ${i + 1}번째 주제에 대한 연구 결과를 다룹니다.`,
+    ])
+  );
 
-  return NextResponse.json({ summary: summaries[id] || '해당 논문 요약이 없습니다.' });
+  return NextResponse.json({
+    summary: summaries[id] || "해당 논문 요약이 없습니다.",
+  });
 }
