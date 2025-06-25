@@ -24,7 +24,7 @@ export default function GeneratePage() {
 
   return (
     <main className="p-6">
-      <h1 className="text-2xl font-bold mb-4">🔍 논문 검색 및 팟캐스트 생성</h1>
+      <h1 className="text-2xl font-bold mb-4">🎙️ 논문 검색 및 팟캐스트 생성</h1>
 
       <div className="mb-4">
         <input
