@@ -16,12 +16,13 @@ export default function GeneratePage() {
     setSummary("");
   };
 
-  const handleSelect = async (id) => {
-    setSelectedId(id);
-    const res = await fetch(`/api/summary?id=${id}`);
-    const data = await res.json();
-    setSummary(data.summary);
+  const handleSelect = async (id: string) => {
+  setSelectedId(id);
+  const res = await fetch(`/api/summary?id=${id}`);
+  const data = await res.json();
+  setSummary(data.summary);
   };
+
 
   return (
     <main className="p-6">
