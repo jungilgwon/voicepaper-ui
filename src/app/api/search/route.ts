@@ -1,16 +1,11 @@
-// src/app/api/search/route.ts
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
   const keyword = searchParams.get("keyword");
 
-  const papers = [
-    { id: "paper1", title: `DNA 구조 분석 논문 1` },
-    { id: "paper2", title: `DNA와 RNA 비교 연구 2` },
-  ];
-
-  const filtered = papers.filter(p => p.title.includes(keyword || ""));
-
-  return new Response(JSON.stringify({ papers: filtered }), {
-    headers: { "Content-Type": "application/json" },
+  return Response.json({
+    papers: [
+      { id: "1", title: `${keyword} 관련 논문 1` },
+      { id: "2", title: `${keyword} 관련 논문 2` },
+    ],
   });
 }
