@@ -11,7 +11,7 @@ export default function GeneratePage() {
   const handleSearch = async () => {
     const res = await fetch(`/api/search?keyword=${encodeURIComponent(keyword)}`);
     const data = await res.json();
-    setPapers(data.slice(0, 20));
+    setPapers(data.papers.slice(0, 20));
   };
 
   const handleSelect = async (id: string) => {
@@ -52,7 +52,7 @@ export default function GeneratePage() {
                 ${
                   selectedId === paper.id
                     ? "bg-blue-600 border-blue-400"
-                    : "bg-[#1e1e1e] border-gray-700 hover:border-blue-400"
+                    : "bg-[#2a2a2a] border-gray-700 hover:border-blue-400 hover:bg-[#333]"
                 }`}
             >
               {paper.title}
@@ -61,9 +61,9 @@ export default function GeneratePage() {
         </ul>
 
         {summary && (
-          <div className="mt-8 bg-[#1e1e1e] border border-gray-700 rounded-lg p-6 shadow">
+          <div className="mt-8 bg-[#2a2a2a] border border-gray-700 rounded-lg p-6 shadow">
             <h2 className="text-xl font-bold mb-2 text-blue-400">📝 요약</h2>
-            <p className="text-gray-300 whitespace-pre-wrap">{summary}</p>
+            <p className="text-gray-200 whitespace-pre-wrap">{summary}</p>
           </div>
         )}
       </div>
