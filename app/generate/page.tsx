@@ -1,3 +1,5 @@
+"use client"; // ✅ 이 줄을 가장 위에 추가
+
 import { useState } from "react";
 
 export default function GeneratePage() {
