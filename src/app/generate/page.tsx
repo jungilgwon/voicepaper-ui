@@ -1,4 +1,7 @@
+"use client";
+
 import { useState } from "react";
+import axios from "axios";
 
 const categories = [
   { name: "자연어처리", code: "cs.CL" },
@@ -8,41 +11,31 @@ const categories = [
   { name: "인공지능", code: "cs.AI" },
 ];
 
-interface Paper {
-  id: string;
-  title: string;
-  summary: string;
-  link: string;
-}
-
 export default function GeneratePage() {
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
-  const [papers, setPapers] = useState<Paper[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [papers, setPapers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   const fetchPapers = async (categoryCode: string) => {
     setLoading(true);
-    setSelectedCategory(categoryCode);
     try {
-      const response = await fetch(
-        `https://export.arxiv.org/api/query?search_query=cat:${categoryCode}&start=0&max_results=5&sortBy=submittedDate&sortOrder=descending`
+      const res = await axios.get(
+        `https://export.arxiv.org/api/query?search_query=cat:${categoryCode}&start=0&max_results=5`
       );
-      const xml = await response.text();
+
       const parser = new DOMParser();
-      const xmlDoc = parser.parseFromString(xml, "text/xml");
-      const entries = Array.from(xmlDoc.getElementsByTagName("entry"));
-      const parsedPapers = entries.map((entry) => ({
-        id: entry.getElementsByTagName("id")[0].textContent || "",
-        title:
-          entry.getElementsByTagName("title")[0].textContent?.trim() || "",
-        summary:
-          entry.getElementsByTagName("summary")[0].textContent?.trim() || "",
-        link: entry.getElementsByTagName("id")[0].textContent || "",
+      const xml = parser.parseFromString(res.data, "application/xml");
+      const entries = xml.getElementsByTagName("entry");
+
+      const parsedPapers = Array.from(entries).map((entry) => ({
+        title: entry.getElementsByTagName("title")[0]?.textContent,
+        summary: entry.getElementsByTagName("summary")[0]?.textContent,
+        link: entry.getElementsByTagName("id")[0]?.textContent,
       }));
+
       setPapers(parsedPapers);
-    } catch (error) {
-      console.error("arXiv fetch error:", error);
-      setPapers([]);
+    } catch (err) {
+      console.error("논문 불러오기 실패:", err);
     } finally {
       setLoading(false);
     }
@@ -53,16 +46,17 @@ export default function GeneratePage() {
       <h1 className="text-2xl font-bold mb-4">🎙️ 논문 팟캐스트 생성</h1>
 
       <div className="mb-4">
-        <p className="mb-2 font-semibold">주제를 선택하세요:</p>
-        <div className="flex gap-2 flex-wrap">
+        <p className="mb-2 font-medium">주제를 선택하세요:</p>
+        <div className="flex flex-wrap gap-2">
           {categories.map((cat) => (
             <button
               key={cat.code}
-              onClick={() => fetchPapers(cat.code)}
-              className={`px-3 py-1 rounded border text-sm transition-colors ${
-                selectedCategory === cat.code
-                  ? "bg-black text-white"
-                  : "bg-white text-black"
+              onClick={() => {
+                setSelectedCategory(cat.code);
+                fetchPapers(cat.code);
+              }}
+              className={`px-4 py-2 rounded border ${
+                selectedCategory === cat.code ? "bg-black text-white" : ""
               }`}
             >
               {cat.name}
@@ -71,26 +65,28 @@ export default function GeneratePage() {
         </div>
       </div>
 
-      {loading && <p className="mt-4">🔄 논문을 불러오는 중...</p>}
+      {loading && <p>논문 불러오는 중...</p>}
 
-      <div className="space-y-4 mt-6">
-        {papers.map((paper) => (
-          <div key={paper.id} className="border p-4 rounded shadow-sm">
-            <h2 className="text-lg font-semibold mb-1">{paper.title}</h2>
-            <p className="text-sm text-gray-600 mb-2 line-clamp-3">
-              {paper.summary}
-            </p>
-            <a
-              href={paper.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-500 underline text-sm"
+      {!loading && papers.length > 0 && (
+        <div className="space-y-4">
+          {papers.map((paper, index) => (
+            <div
+              key={index}
+              className="p-4 border rounded bg-white text-black shadow"
             >
-              원문 보기
-            </a>
-          </div>
-        ))}
-      </div>
+              <h2 className="text-lg font-semibold mb-2">{paper.title}</h2>
+              <p className="text-sm mb-2">{paper.summary}</p>
+              <a
+                href={paper.link}
+                className="text-blue-600 underline text-sm"
+                target="_blank"
+              >
+                논문 보기
+              </a>
+            </div>
+          ))}
+        </div>
+      )}
     </main>
   );
 }
