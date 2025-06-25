@@ -29,7 +29,7 @@ export default function GeneratePage() {
       <div className="mb-4">
         <input
           type="text"
-          placeholder="예: DNA, BERT, GAN..."
+          placeholder="예: DNA, BERT, GAN...."
           className="border rounded p-2 mr-2"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
