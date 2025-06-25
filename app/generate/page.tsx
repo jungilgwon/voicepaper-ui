@@ -5,7 +5,7 @@ import { useState } from "react";
 export default function GeneratePage() {
   const [keyword, setKeyword] = useState("");
   const [papers, setPapers] = useState([]);
-  const [selectedId, setSelectedId] = useState(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [summary, setSummary] = useState("");
 
   const handleSearch = async () => {
