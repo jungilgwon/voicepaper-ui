@@ -1,4 +1,4 @@
-"use client"; // ✅ 이 줄을 가장 위에 추가
+"use client";
 
 import { useState } from "react";
 
