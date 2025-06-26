@@ -27,7 +27,7 @@ async function extractTextFromPdf(buffer: Buffer): Promise<string> {
 export async function POST(req: Request): Promise<Response> {
   // 빌드/프리렌더링 환경에서 API 키가 없으면 바로 에러 반환
   if (process.env.NODE_ENV === "production" && !process.env.OPENAI_API_KEY) {
-    return NextResponse.json({ error: "API 사용 불가: OPENAI_API_KEY 없음" }, { status: 400 });
+    return NextResponse.json({ error: "API 사용 불가: OPENAI_API_KEY 없음." }, { status: 400 });
   }
 
   return new Promise((resolve, reject) => {
