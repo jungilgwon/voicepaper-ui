@@ -60,7 +60,7 @@ export async function POST(req: Request): Promise<Response> {
           const buffer = await fs.readFile(file.filepath);
           const text = await extractTextFromPdf(buffer);
 
-          // 언어별 프롬프트 추가
+          // 언어별 프롬프트 추가.
           let langPrompt = "";
           switch (language) {
             case "en-US":
