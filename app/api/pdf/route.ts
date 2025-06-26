@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { OpenAI } from "openai";
 import pdfParse from "pdf-parse";
-import { Readable } from "stream";
 import formidable from "formidable";
 import fs from "fs";
 

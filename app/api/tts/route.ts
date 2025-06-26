@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import googleTTS from "google-tts-api";
+import * as googleTTS from "google-tts-api"; // ✅ named import로 수정
 import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
 import path from "path";
