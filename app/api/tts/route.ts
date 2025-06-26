@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as googleTTS from "google-tts-api";
-import { v4 as uuidv4 } from "uuid";
-import path from "path";
-import fs from "fs";
 
 export async function POST(req: NextRequest) {
   const { text, language } = await req.json();
