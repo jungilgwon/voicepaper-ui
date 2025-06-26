@@ -53,7 +53,7 @@ export async function POST(req: Request): Promise<Response> {
 
           // 업로드된 파일이 없으면 즉시 에러 반환
           if (!file || Array.isArray(file)) {
-            resolve(NextResponse.json({ error: "유효한 PDF 파일이 없습니다.." }, { status: 400 }));
+            resolve(NextResponse.json({ error: "유효한 PDF 파일이 없습니다..." }, { status: 400 }));
             return;
           }
 
