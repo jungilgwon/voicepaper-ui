@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { OpenAI } from "openai";
-import pdfParse from "pdf-parse";
-import formidable from "formidable";
-import fs from "fs";
+import formidable, { File } from "formidable";
+import fs from "fs/promises";
+import { IncomingForm } from "formidable";
 
 export const config = {
   api: {
@@ -11,35 +11,55 @@ export const config = {
 };
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
-export async function POST(req: NextRequest) {
-  const form = formidable({ multiples: false, uploadDir: "/tmp", keepExtensions: true });
+// 텍스트 추출 함수 정의
+async function extractTextFromPdf(buffer: Buffer): Promise<string> {
+  const pdf = await import("pdf-parse");
+  const data = await pdf.default(buffer);
+  return data.text;
+}
 
-  const data: any = await new Promise((resolve, reject) => {
-    form.parse(req as any, (err, fields, files) => {
-      if (err) reject(err);
-      resolve({ fields, files });
+export async function POST(req: Request): Promise<Response> {
+  return new Promise((resolve, reject) => {
+    const form = formidable({ multiples: false });
+
+    form.parse(req as any, async (err: any, fields: Record<string, any>, files: Record<string, File>) => {
+      try {
+        if (err) {
+          reject(new Error("Form parsing failed"));
+          return;
+        }
+
+        const file = files.file;
+        const prompt = fields.prompt?.toString() || "다음 PDF 문서를 핵심만 3줄로 요약해줘.";
+        const language = fields.language?.toString() || "ko-KR";
+
+        if (!file || Array.isArray(file)) {
+          reject(new Error("유효한 PDF 파일이 없습니다."));
+          return;
+        }
+
+        const buffer = await fs.readFile(file.filepath);
+        const text = await extractTextFromPdf(buffer);
+
+        const messages = [
+          { role: "system", content: "당신은 논문을 요약해주는 AI입니다." },
+          { role: "user", content: `${prompt}\n\n${text}` },
+        ];
+
+        const completion = await openai.chat.completions.create({
+          model: "gpt-4",
+          messages,
+        });
+
+        const summary = completion.choices[0]?.message.content ?? "요약에 실패했습니다.";
+        resolve(NextResponse.json({ summary }));
+      } catch (e) {
+        console.error(e);
+        reject(NextResponse.json({ error: "처리 중 오류 발생" }, { status: 500 }));
+      }
     });
   });
-
-  const file = data.files.file[0];
-  const buffer = fs.readFileSync(file.filepath);
-  const pdf = await pdfParse(buffer);
-  const text = pdf.text.slice(0, 3000); // GPT 처리 한계 방지
-
-  const prompt = data.fields.prompt?.[0] || "이 논문을 간단히 요약해줘";
-
-  const completion = await openai.chat.completions.create({
-    messages: [
-      { role: "system", content: "당신은 논문 요약 전문가입니다." },
-      { role: "user", content: `${prompt}:\n\n${text}` },
-    ],
-    model: "gpt-4",
-  });
-
-  const summary = completion.choices[0].message.content;
-
-  return NextResponse.json({ summary });
 }
