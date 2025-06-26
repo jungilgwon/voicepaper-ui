@@ -9,10 +9,14 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "formidable": "^3.5.4",
+    "google-tts-api": "^2.0.2",
     "next": "15.3.4",
+    "openai": "^5.7.0",
     "pdf-parse": "^1.1.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
