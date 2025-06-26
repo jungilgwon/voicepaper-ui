@@ -2,151 +2,128 @@
 
 import { useState } from "react";
 
-export default function GeneratePage() {
-  const [keyword, setKeyword] = useState("");
-  const [papers, setPapers] = useState<{ id: string; title: string }[]>([]);
+export default function UploadPdfPage() {
+  const [file, setFile] = useState<File | null>(null);
   const [summary, setSummary] = useState("");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [voiceStyle, setVoiceStyle] = useState("default");
-  const [voiceSpeed, setVoiceSpeed] = useState(1.0);
-  const [pdfText, setPdfText] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [language, setLanguage] = useState("ko-KR");
+  const [customPrompt, setCustomPrompt] = useState("");
 
-  const handleSearch = async () => {
-    const res = await fetch(`/api/search?keyword=${encodeURIComponent(keyword)}`);
-    const data = await res.json();
-    setPapers(data.papers.slice(0, 20));
-  };
-
-  const handleSelect = async (id: string) => {
-    setSelectedId(id);
-    const res = await fetch(`/api/summary?id=${id}`);
-    const data = await res.json();
-    setSummary(data.summary);
-  };
-
-  const handlePlay = async () => {
-    const res = await fetch("/api/tts", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        text: summary,
-        style: voiceStyle,
-        speed: voiceSpeed,
-      }),
-    });
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const audio = new Audio(url);
-    audio.play();
-  };
-
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleUpload = async () => {
     if (!file) return;
+    setLoading(true);
+    setError("");
+    setAudioUrl(null);
 
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("language", language);
+    formData.append("prompt", customPrompt);
 
-    const res = await fetch("/api/pdf", {
-      method: "POST",
-      body: formData,
-    });
-    const data = await res.json();
-    setPdfText(data.text);
-    setSummary(data.summary);
+    try {
+      const res = await fetch("/api/pdf", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("업로드 실패");
+
+      const data = await res.json();
+      setSummary(data.summary);
+
+      const ttsRes = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: data.summary, language }),
+      });
+
+      if (!ttsRes.ok) throw new Error("TTS 변환 실패");
+
+      const ttsData = await ttsRes.json();
+      setAudioUrl(ttsData.audioUrl);
+    } catch (err) {
+      console.error(err);
+      setError("요약 또는 음성 처리 중 오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white px-4 py-8">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6 text-white flex items-center gap-2">
-          <span role="img" aria-label="search">🔍</span> 논문 검색 및 요약
-        </h1>
+    <main className="p-6 max-w-2xl mx-auto bg-gradient-to-b from-sky-50 via-white to-sky-100 min-h-screen">
+      <h1 className="text-3xl font-bold mb-6 text-blue-900 drop-shadow">
+        📄 PDF 논문 업로드 및 요약 + 음성 생성
+      </h1>
 
-        <div className="flex gap-2 mb-6">
-          <input
-            className="flex-1 px-4 py-2 rounded bg-[#1e1e1e] text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            placeholder="예: AI, DNA, 로봇..."
-          />
-          <button
-            onClick={handleSearch}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded font-semibold shadow"
-          >
-            검색
-          </button>
-        </div>
+      <input
+        type="file"
+        accept="application/pdf"
+        onChange={(e) => setFile(e.target.files?.[0] || null)}
+        className="mb-4 block text-gray-800"
+      />
 
-        <div className="mb-6">
-          <label className="block mb-2 text-sm text-gray-300">PDF 업로드:</label>
-          <input
-            type="file"
-            accept="application/pdf"
-            onChange={handleUpload}
-            className="text-white"
-          />
-        </div>
-
-        <ul className="space-y-2">
-          {papers.map((paper) => (
-            <li
-              key={paper.id}
-              onClick={() => handleSelect(paper.id)}
-              className={`p-4 rounded-lg cursor-pointer transition-colors shadow border 
-                ${
-                  selectedId === paper.id
-                    ? "bg-blue-600 border-blue-400"
-                    : "bg-[#2a2a2a] border-gray-700 hover:border-blue-400 hover:bg-[#444]"
-                }`}
-            >
-              {paper.title}
-            </li>
-          ))}
-        </ul>
-
-        {summary && (
-          <div className="mt-8 bg-[#1a1a1a] border border-gray-600 rounded-lg p-6 shadow-lg">
-            <h2 className="text-xl font-bold mb-2 text-blue-400">📝 요약</h2>
-            <p className="text-gray-200 leading-relaxed whitespace-pre-wrap mb-4">
-              {summary}
-            </p>
-
-            <div className="flex gap-4 items-center">
-              <label className="text-gray-300">스타일:</label>
-              <select
-                className="bg-[#2a2a2a] border border-gray-600 text-white px-2 py-1 rounded"
-                value={voiceStyle}
-                onChange={(e) => setVoiceStyle(e.target.value)}
-              >
-                <option value="default">기본</option>
-                <option value="narration">나레이션</option>
-                <option value="conversational">대화체</option>
-              </select>
-
-              <label className="text-gray-300 ml-4">속도:</label>
-              <input
-                type="number"
-                step="0.1"
-                min="0.5"
-                max="2.0"
-                className="w-20 bg-[#2a2a2a] border border-gray-600 text-white px-2 py-1 rounded"
-                value={voiceSpeed}
-                onChange={(e) => setVoiceSpeed(parseFloat(e.target.value))}
-              />
-
-              <button
-                onClick={handlePlay}
-                className="ml-auto bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow"
-              >
-                ▶️ 재생
-              </button>
-            </div>
-          </div>
-        )}
+      <div className="mb-4">
+        <label className="block mb-1 font-medium text-gray-700">언어 선택:</label>
+        <select
+          value={language}
+          onChange={(e) => setLanguage(e.target.value)}
+          className="w-full p-2 border border-gray-300 rounded-md"
+        >
+          <option value="ko-KR">한국어</option>
+          <option value="en-US">영어</option>
+          <option value="ja-JP">일본어</option>
+          <option value="de-DE">독일어</option>
+        </select>
       </div>
-    </div>
+
+      <div className="mb-4">
+        <label className="block mb-1 font-medium text-gray-700">요약 커스터마이징 (예: 3줄 요약, 결론 중심 등):</label>
+        <input
+          type="text"
+          value={customPrompt}
+          onChange={(e) => setCustomPrompt(e.target.value)}
+          placeholder="요약 방식 입력"
+          className="w-full p-2 border border-gray-300 rounded-md"
+        />
+      </div>
+
+      <button
+        onClick={handleUpload}
+        disabled={loading || !file}
+        className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-full font-medium shadow-md transition disabled:opacity-50"
+      >
+        {loading ? "요약 및 음성 생성 중..." : "업로드 및 처리"}
+      </button>
+
+      {error && <p className="text-red-600 mt-4 font-medium">❗ {error}</p>}
+
+      {summary && (
+        <div className="mt-6 p-6 bg-white text-gray-800 border border-gray-200 rounded-lg shadow-lg">
+          <h2 className="text-xl font-bold mb-3 text-blue-700">📘 요약 결과:</h2>
+          <p className="mb-4 whitespace-pre-line leading-relaxed text-gray-900">{summary}</p>
+
+          {audioUrl && (
+            <div className="flex items-center gap-4">
+              <div>
+                <h3 className="text-lg font-semibold mb-2 text-blue-600">🔊 음성 재생:</h3>
+                <audio controls className="w-full">
+                  <source src={audioUrl} type="audio/mpeg" />
+                  브라우저가 오디오 태그를 지원하지 않습니다.
+                </audio>
+              </div>
+              <a
+                href={audioUrl}
+                download="summary.mp3"
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full shadow-md transition"
+              >
+                ⬇ 다운로드
+              </a>
+            </div>
+          )}
+        </div>
+      )}
+    </main>
   );
 }
