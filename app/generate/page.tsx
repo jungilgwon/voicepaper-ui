@@ -100,7 +100,7 @@ export default function UploadPdfPage() {
       if (!res.ok) throw new Error("검색 실패");
       const data = await res.json();
       setSearchResults(data.papers || []);
-    } catch (err) {
+    } catch {
       setError("논문 검색 중 오류가 발생했습니다.");
     } finally {
       setSearchLoading(false);
@@ -132,7 +132,7 @@ export default function UploadPdfPage() {
         link: linkMatch ? linkMatch[1].trim() : `https://arxiv.org/abs/${paper.id}`,
         category: categoryMatch ? categoryMatch[1] : "-",
       });
-    } catch (err) {
+    } catch {
       setError("논문 상세 정보를 불러오는 중 오류가 발생했습니다.");
     } finally {
       setDetailLoading(false);
@@ -165,7 +165,7 @@ export default function UploadPdfPage() {
       if (!ttsRes.ok) throw new Error("TTS 변환 실패");
       const ttsData = await ttsRes.json();
       setAudioUrl(ttsData.audioUrl);
-    } catch (err) {
+    } catch {
       setError("요약 또는 음성 처리 중 오류가 발생했습니다.");
     } finally {
       setLoading(false);
