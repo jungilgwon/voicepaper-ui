@@ -39,7 +39,7 @@ export async function POST(req: Request): Promise<Response> {
           }
 
           const file = files.file as File | File[] | undefined;
-          const prompt = fields.prompt?.toString() || "다음 PDF 문서를 핵심만 3줄로 요약해줘.";
+          const prompt = fields.prompt?.toString() || "다음 PDF 문서를 핵심만 3줄로 요약해줘..";
           const language = fields.language?.toString() || "ko-KR";
 
           if (!file || Array.isArray(file)) {
