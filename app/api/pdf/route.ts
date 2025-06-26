@@ -1,53 +1,46 @@
-import { NextResponse } from "next/server";
-import { Readable } from "stream";
+import { NextRequest, NextResponse } from "next/server";
+import { OpenAI } from "openai";
 import pdfParse from "pdf-parse";
+import { Readable } from "stream";
+import formidable from "formidable";
+import fs from "fs";
 
-export const runtime = "nodejs"; // edge에서는 안됨
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
-export async function POST(req: Request) {
-  const formData = await req.formData();
-  const file = formData.get("file") as File;
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY!,
+});
 
-  if (!file) {
-    return NextResponse.json({ error: "파일이 없습니다." }, { status: 400 });
-  }
+export async function POST(req: NextRequest) {
+  const form = formidable({ multiples: false, uploadDir: "/tmp", keepExtensions: true });
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-
-  try {
-    const data = await pdfParse(buffer);
-    const summary = await summarizeText(data.text);
-    return NextResponse.json({ summary });
-  } catch (err) {
-    return NextResponse.json({ error: "PDF 파싱 실패" }, { status: 500 });
-  }
-}
-
-async function summarizeText(text: string): Promise<string> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) throw new Error("OPENAI_API_KEY가 설정되지 않았습니다.");
-
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: "gpt-4",
-      messages: [
-        {
-          role: "system",
-          content: "다음 텍스트를 한국어로 간결하게 요약해주세요."
-        },
-        {
-          role: "user",
-          content: text.slice(0, 8000) // 너무 긴 텍스트 방지
-        }
-      ]
-    })
+  const data: any = await new Promise((resolve, reject) => {
+    form.parse(req as any, (err, fields, files) => {
+      if (err) reject(err);
+      resolve({ fields, files });
+    });
   });
 
-  const json = await res.json();
-  return json.choices?.[0]?.message?.content || "요약에 실패했습니다.";
+  const file = data.files.file[0];
+  const buffer = fs.readFileSync(file.filepath);
+  const pdf = await pdfParse(buffer);
+  const text = pdf.text.slice(0, 3000); // GPT 처리 한계 방지
+
+  const prompt = data.fields.prompt?.[0] || "이 논문을 간단히 요약해줘";
+
+  const completion = await openai.chat.completions.create({
+    messages: [
+      { role: "system", content: "당신은 논문 요약 전문가입니다." },
+      { role: "user", content: `${prompt}:\n\n${text}` },
+    ],
+    model: "gpt-4",
+  });
+
+  const summary = completion.choices[0].message.content;
+
+  return NextResponse.json({ summary });
 }
