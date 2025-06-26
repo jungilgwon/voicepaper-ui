@@ -1,13 +1,31 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import axios from "axios";
+import * as cheerio from "cheerio";
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const keyword = searchParams.get("keyword") || "";
+  const query = searchParams.get("query") || "";
 
-  const dummyPapers = Array.from({ length: 20 }, (_, i) => ({
-    id: `arxiv-${i}`,
-    title: `${keyword} 관련 논문 ${i + 1}`,
-  }));
+  if (!query) return NextResponse.json({ papers: [] });
 
-  return NextResponse.json({ papers: dummyPapers });
+  const response = await axios.get("https://arxiv.org/search/", {
+    params: {
+      query,
+      searchtype: "all",
+      abstracts: "show",
+      order: "-announced_date_first",
+      size: 20,
+    },
+  });
+
+  const $ = cheerio.load(response.data);
+  const papers: { id: string; title: string }[] = [];
+
+  $(".arxiv-result").each((_, el) => {
+    const id = $(el).find(".list-title a").attr("href")?.split("/abs/")[1];
+    const title = $(el).find(".title").text().trim();
+    if (id && title) papers.push({ id, title });
+  });
+
+  return NextResponse.json({ papers });
 }
