@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { OpenAI } from "openai";
+import { ChatCompletionMessageParam } from "openai/resources";
 import formidable, { File, Fields, Files } from "formidable";
 import fs from "fs/promises";
+import pdfParse from "pdf-parse";
+import type { IncomingMessage } from "http";
 
 export const config = {
   api: {
@@ -15,8 +18,7 @@ const openai = new OpenAI({
 
 // PDF에서 텍스트 추출 함수
 async function extractTextFromPdf(buffer: Buffer): Promise<string> {
-  const pdf = await import("pdf-parse");
-  const data = await pdf.default(buffer);
+  const data = await pdfParse(buffer);
   return data.text;
 }
 
@@ -24,9 +26,9 @@ export async function POST(req: Request): Promise<Response> {
   return new Promise((resolve, reject) => {
     const form = formidable({ multiples: false });
 
-    // 콜백 타입을 명확히 지정
+    // 콜백 타입을 명확히 지정, req를 IncomingMessage로 캐스팅
     form.parse(
-      req as unknown as NodeJS.ReadableStream,
+      req as unknown as IncomingMessage,
       async (
         err: Error | null,
         fields: Fields,
@@ -69,7 +71,8 @@ export async function POST(req: Request): Promise<Response> {
           // 커스텀 프롬프트가 있으면 우선 사용, 없으면 언어별 기본 프롬프트 사용
           const finalPrompt = prompt.trim() ? prompt : langPrompt;
 
-          const messages = [
+          // OpenAI 메시지 타입 명확히 지정
+          const messages: ChatCompletionMessageParam[] = [
             { role: "system", content: "당신은 논문을 요약해주는 AI입니다." },
             { role: "user", content: `${finalPrompt}\n\n${text}` },
           ];
