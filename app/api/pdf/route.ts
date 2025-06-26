@@ -16,6 +16,13 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// 빌드/프리렌더링 환경에서 API 키가 없으면 바로 에러 반환
+if (process.env.NODE_ENV === "production" && !process.env.OPENAI_API_KEY) {
+  export async function POST() {
+    return NextResponse.json({ error: "API 사용 불가: OPENAI_API_KEY 없음" }, { status: 400 });
+  }
+}
+
 // PDF에서 텍스트 추출 함수
 async function extractTextFromPdf(buffer: Buffer): Promise<string> {
   const data = await pdfParse(buffer);
@@ -23,6 +30,11 @@ async function extractTextFromPdf(buffer: Buffer): Promise<string> {
 }
 
 export async function POST(req: Request): Promise<Response> {
+  // 빌드/프리렌더링 환경에서 API 키가 없으면 바로 에러 반환
+  if (process.env.NODE_ENV === "production" && !process.env.OPENAI_API_KEY) {
+    return NextResponse.json({ error: "API 사용 불가: OPENAI_API_KEY 없음" }, { status: 400 });
+  }
+
   return new Promise((resolve, reject) => {
     const form = formidable({ multiples: false });
 
@@ -44,8 +56,9 @@ export async function POST(req: Request): Promise<Response> {
           const prompt = fields.prompt?.toString() || "다음 PDF 문서를 핵심만 3줄로 요약해줘..";
           const language = fields.language?.toString() || "ko-KR";
 
+          // 업로드된 파일이 없으면 즉시 에러 반환
           if (!file || Array.isArray(file)) {
-            reject(new Error("유효한 PDF 파일이 없습니다."));
+            resolve(NextResponse.json({ error: "유효한 PDF 파일이 없습니다." }, { status: 400 }));
             return;
           }
 
