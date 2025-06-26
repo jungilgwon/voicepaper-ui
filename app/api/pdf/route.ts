@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import { OpenAI } from "openai";
+import { ChatCompletionMessageParam } from "openai/resources";
 import pdfParse from "pdf-parse";
 
 // PDF에서 텍스트 추출 함수
@@ -30,9 +31,10 @@ export async function POST(req: Request): Promise<Response> {
       return NextResponse.json({ error: "유효한 PDF 파일이 없습니다." }, { status: 400 });
     }
 
-    // 파일을 ArrayBuffer로 읽어서 Buffer로 변환
+    // 파일을 ArrayBuffer로 읽어서 Uint8Array로 변환 후 Buffer로 변환
     const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    const uint8Array = new Uint8Array(arrayBuffer); // 브라우저 File → Uint8Array
+    const buffer = Buffer.from(uint8Array); // Uint8Array → Node.js Buffer
 
     // PDF 텍스트 추출
     const text = await extractTextFromPdf(buffer);
@@ -57,7 +59,7 @@ export async function POST(req: Request): Promise<Response> {
     const finalPrompt = prompt.trim() ? prompt : langPrompt;
 
     // OpenAI 메시지 타입 명확히 지정
-    const messages = [
+    const messages: ChatCompletionMessageParam[] = [
       { role: "system", content: "당신은 논문을 요약해주는 AI입니다." },
       { role: "user", content: `${finalPrompt}\n\n${text}` },
     ];
