@@ -16,13 +16,6 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// 빌드/프리렌더링 환경에서 API 키가 없으면 바로 에러 반환
-if (process.env.NODE_ENV === "production" && !process.env.OPENAI_API_KEY) {
-  export async function POST() {
-    return NextResponse.json({ error: "API 사용 불가: OPENAI_API_KEY 없음" }, { status: 400 });
-  }
-}
-
 // PDF에서 텍스트 추출 함수
 async function extractTextFromPdf(buffer: Buffer): Promise<string> {
   const data = await pdfParse(buffer);
