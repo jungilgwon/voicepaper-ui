@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
 
   const res = await fetch(`https://export.arxiv.org/api/query?id_list=${id}`);
   const xml = await res.text();
-  const contentMatch = xml.match(/<summary>(.*?)<\/summary>/s);
+  const contentMatch = xml.match(/<summary>([\s\S]*?)<\/summary>/);
   const content = contentMatch?.[1]?.replace(/\s+/g, " ").trim() || "내용을 불러올 수 없습니다.";
 
   const gptRes = await openai.chat.completions.create({
